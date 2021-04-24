@@ -41,7 +41,53 @@ Ejercicios básicos
    * Determine el mejor candidato para el periodo de pitch localizando el primer máximo secundario de la
      autocorrelación. Inserte a continuación el código correspondiente.
 
+     ``` cpp
+      float PitchAnalyzer::compute_pitch(vector<float> & x) const {
+        if (x.size() != frameLen)
+        return -1.0F;
+
+        //Window input frame
+        for (unsigned int i=0; i<x.size(); ++i)
+          x[i] *= window[i];
+
+        vector<float> r(npitch_max);
+
+        //Compute correlation
+        autocorrelation(x, r);
+ 
+        vector<float>::const_iterator iRMax = r.begin() + npitch_min;
+
+        for (vector<float>::const_iterator iR = iRMax; iR < r.end(); iR++) {
+          if(*iR > *iRMax) {
+            iRMax = iR;
+          }
+        }
+        unsigned int lag = iRMax - r.begin();
+
+        float pot = 10 * log10(r[0]);
+
+        //You can print these (and other) features, look at them using wavesurfer
+        //Based on that, implement a rule for unvoiced
+        //change to #if 1 and compile
+        #if 0
+        if (r[0] > 0.0F)
+          cout << pot << '\t' << r[1]/r[0] << '\t' << r[lag]/r[0] << endl;
+        #endif
+    
+        if (unvoiced(pot, r[1]/r[0], r[lag]/r[0]))
+          return 0;
+        else
+          return (float) samplingFreq/(float) lag;
+      }
+      ```
+
    * Implemente la regla de decisión sonoro o sordo e inserte el código correspondiente.
+    
+      ``` cpp
+      bool PitchAnalyzer::unvoiced(float pot, float r1norm, float rmaxnorm) const {
+        return (r1norm < 0.9 || rmaxnorm < 0.2 || pot < -38);
+      }
+      ```
 
 - Una vez completados los puntos anteriores, dispondrá de una primera versión del detector de pitch. El 
   resto del trabajo consiste, básicamente, en obtener las mejores prestaciones posibles con él.
