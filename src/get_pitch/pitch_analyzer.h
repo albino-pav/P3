@@ -9,8 +9,9 @@
 namespace upc {
   const float MIN_F0 = 20.0F;    ///< Minimum value of pitch in Hertzs
   const float MAX_F0 = 10000.0F; ///< Maximum value of pitch in Hertzs
-
-  ///
+  const float POT_TH=-42;
+  const float RMAX_TH=0.43;
+  const float R1_TH=0.98;
   /// PitchAnalyzer: class that computes the pitch (in Hz) from a signal frame.
   /// No pre-processing or post-processing has been included
   ///
@@ -30,7 +31,7 @@ namespace upc {
       samplingFreq, ///< sampling rate (in samples per second). Has to be set in the constructor call
       npitch_min, ///< minimum value of pitch period, in samples
       npitch_max; ///< maximum value of pitch period, in samples
- 
+      float r1_limite,rmax_limite,pot_limite;
 	///
 	/// Computes correlation from lag=0 to r.size()
 	///
@@ -50,15 +51,21 @@ namespace upc {
   public:
     PitchAnalyzer(	unsigned int fLen,			///< Frame length in samples
 					unsigned int sFreq,			///< Sampling rate in Hertzs
-					Window w=PitchAnalyzer::HAMMING,	///< Window type
+					Window w= PitchAnalyzer::HAMMING,	///< Window type
 					float min_F0 = MIN_F0,		///< Pitch range should be restricted to be above this value
-					float max_F0 = MAX_F0		///< Pitch range should be restricted to be below this value
-				 )
+					float max_F0 = MAX_F0,		///< Pitch range should be restricted to be below this value
+          float pot=POT_TH,
+          float rmax=RMAX_TH,
+          float r1=R1_TH
+         )
 	{
       frameLen = fLen;
       samplingFreq = sFreq;
       set_f0_range(min_F0, max_F0);
       set_window(w);
+      r1_limite=r1;
+      rmax_limite=rmax;
+      pot_limite=pot;
     }
 
 	///

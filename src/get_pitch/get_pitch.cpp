@@ -27,6 +27,9 @@ Usage:
 Options:
     -h, --help  Show this screen
     --version   Show the version of the project
+    -p FLOAT,   --pot_limite=FLOAT valor de la potencia limite [default: -42]
+    -r FLOAT,   --rmax_limite=FLOAT valor max de r [default: 0.43]
+    -1 FLOAT,   --r1_limite=FLOAT valor max de r1 [default: 0.98]
 
 Arguments:
     input-wav   Wave file with the audio signal
@@ -57,18 +60,28 @@ int main(int argc, const char *argv[]) {
 
   int n_len = rate * FRAME_LEN;
   int n_shift = rate * FRAME_SHIFT;
-
+  float potencia=-std::stof(args["--pot_limite"].asString());
+  float rmaxlim=std::stof(args["--rmax_limite"].asString());
+  float r1lim=std::stof(args["--r1_limite"].asString());
   // Define analyzer
-  PitchAnalyzer analyzer(n_len, rate, PitchAnalyzer::HAMMING, 50, 500);
+  PitchAnalyzer analyzer(n_len,rate, PitchAnalyzer::HAMMING, 50, 500,potencia,rmaxlim,r1lim);
 
   /// \TODO
   /// Preprocess the input signal in order to ease pitch estimation. For instance,
   /// central-clipping or low pass filtering may be used.
-  
+ 
   // Iterate for each frame and save values in f0 vector
-  vector<float>::iterator iX;
+  vector<float>::iterator iX; //Central Clipping
+  #if 1
+  float threshold = 0.005;
+  for (iX=x.begin();iX<x.end();iX++){
+    if (*iX<=threshold&&*iX>=-threshold)
+      *iX = 0;
+  }
+  #endif
+
   vector<float> f0;
-  for (iX = x.begin(); iX + n_len < x.end(); iX = iX + n_shift) {
+  for (iX = x.begin(); iX + n_len < x.end(); iX = iX + n_shift){
     float f = analyzer(iX, iX + n_len);
     f0.push_back(f);
   }
@@ -76,7 +89,15 @@ int main(int argc, const char *argv[]) {
   /// \TODO
   /// Postprocess the estimation in order to supress errors. For instance, a median filter
   /// or time-warping may be used.
+  vector<float>window(3); //Median filter
 
+  for (unsigned int i=1;i<f0.size()-1;i++) { 
+    for (unsigned int p=0;p<3;p++){
+      window[p] = f0[i-1+p];
+    } 
+   sort(window.begin(), window.end());
+   f0[i] = window[1];
+  }
   // Write f0 contour into the output file
   ofstream os(output_txt);
   if (!os.good()) {
