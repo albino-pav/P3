@@ -6,12 +6,18 @@
 
 using namespace std;
 
-/// Name space of UPC
+/// Name space of Universitat Politècnica de Catalunya
 namespace upc {
   void PitchAnalyzer::autocorrelation(const vector<float> &x, vector<float> &r) const {
 
     for (unsigned int l = 0; l < r.size(); ++l) {
   		/// \TODO Compute the autocorrelation r[l]
+      /// \DONE Autocorrelation *computed*
+      /// - r[l] = sumatorio de n = l a x.size() de x[n] * x[n-l];
+      r[l] = 0;
+      for(unsigned int n = l; n < x.size(); n++){
+        r[l] += x[n] * x[n - l];
+      }
     }
 
     if (r[0] == 0.0F) //to avoid log() and divide zero 
@@ -27,6 +33,9 @@ namespace upc {
     switch (win_type) {
     case HAMMING:
       /// \TODO Implement the Hamming window
+      /// \DONE Ventana de Hamming implementada
+      for (unsigned int i = 1; i < frameLen; i++)
+        window[i] = 0.53836 - 0.46164 * cos(2 * M_PI * i / (frameLen - 1));
       break;
     case RECT:
     default:
@@ -50,7 +59,11 @@ namespace upc {
     /// \TODO Implement a rule to decide whether the sound is voiced or not.
     /// * You can use the standard features (pot, r1norm, rmaxnorm),
     ///   or compute and use other ones.
-    return true;
+    /// \DONE Se ha usado una combinación de la potencia, la r1norm y la rmaxnorm
+
+    if(r1norm < r1norm_th || rmaxnorm < rmaxnorm_th || pot < pot_th)
+      return true;
+    return false;
   }
 
   float PitchAnalyzer::compute_pitch(vector<float> & x) const {
@@ -66,7 +79,7 @@ namespace upc {
     //Compute correlation
     autocorrelation(x, r);
 
-    vector<float>::const_iterator iR = r.begin(), iRMax = iR;
+    vector<float>::const_iterator iR = r.begin(), iRMax = iR + npitch_min;
 
     /// \TODO 
 	/// Find the lag of the maximum value of the autocorrelation away from the origin.<br>
@@ -75,6 +88,13 @@ namespace upc {
 	///    - The lag corresponding to the maximum value of the pitch.
     ///	   .
 	/// In either case, the lag should not exceed that of the minimum value of the pitch.
+    /// \DONE Se busca el lag entre los valores mínimo y máximo de pitch.
+
+    for(iR = r.begin() + npitch_min; iR < r.begin() + npitch_max; iR++){
+      if(*iR > *iRMax){
+        iRMax = iR;
+      }
+    }
 
     unsigned int lag = iRMax - r.begin();
 
@@ -84,8 +104,15 @@ namespace upc {
     //Based on that, implement a rule for unvoiced
     //change to #if 1 and compile
 #if 0
-    if (r[0] > 0.0F)
-      cout << pot << '\t' << r[1]/r[0] << '\t' << r[lag]/r[0] << endl;
+    if (r[0] > 0.0F){
+      //cout << pot << '\t' << r[1]/r[0] << '\t' << r[lag]/r[0] << endl;
+      cout << r[0];
+      for(unsigned int i = 1; i < r.size(); i++){
+        cout << '\t' << r[i];
+      }
+      cout << endl;
+    }
+
 #endif
     
     if (unvoiced(pot, r[1]/r[0], r[lag]/r[0]))

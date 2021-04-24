@@ -25,8 +25,12 @@ Usage:
     get_pitch --version
 
 Options:
-    -h, --help  Show this screen
-    --version   Show the version of the project
+    -p FLOAT, --pot=FLOAT       Boundary value for power [default: -22]
+    -1 FLOAT, --r1norm=FLOAT    Boundary value for r1norm [default: 0.88]
+    -m FLOAT, --rmaxnorm=FLOAT  Boundary value for rmaxnorm [default: 0.425]
+    -x FLOAT, --xth=FLOAT       Boundary value for center clipping [default: 0.0003]
+    -h, --help      Show this screen
+    --version       Show the version of the project
 
 Arguments:
     input-wav   Wave file with the audio signal
@@ -39,6 +43,9 @@ int main(int argc, const char *argv[]) {
 	/// \TODO 
 	///  Modify the program syntax and the call to **docopt()** in order to
 	///  add options and arguments to the program.
+  /// \DONE
+  ///  Opciones añadidas: escoger el umbral para la potencia (pot, en dB), las dos
+  ///  autocorrelaciones normalizadas (r1norm y rmaxnorm) y el center clipping (xth)
     std::map<std::string, docopt::value> args = docopt::docopt(USAGE,
         {argv + 1, argv + argc},	// array of arguments, without the program name
         true,    // show help if requested
@@ -46,6 +53,10 @@ int main(int argc, const char *argv[]) {
 
 	std::string input_wav = args["<input-wav>"].asString();
 	std::string output_txt = args["<output-txt>"].asString();
+  float pot = stof(args["--pot"].asString());
+  float r1norm = stof(args["--r1norm"].asString());
+  float rmaxnorm = stof(args["--rmaxnorm"].asString());
+  float xth = stof(args["--xth"].asString());
 
   // Read input sound file
   unsigned int rate;
@@ -59,11 +70,22 @@ int main(int argc, const char *argv[]) {
   int n_shift = rate * FRAME_SHIFT;
 
   // Define analyzer
-  PitchAnalyzer analyzer(n_len, rate, PitchAnalyzer::HAMMING, 50, 500);
+  PitchAnalyzer analyzer(n_len, rate, pot, r1norm, rmaxnorm, PitchAnalyzer::HAMMING, 50, 500);
 
   /// \TODO
   /// Preprocess the input signal in order to ease pitch estimation. For instance,
   /// central-clipping or low pass filtering may be used.
+  /// \DONE
+  /// Center-clipping con offset implementado
+  
+  for (unsigned int i = 0; i < x.size(); i++){
+    if (x[i] > xth)
+      x[i] = x[i] - xth;
+    else if (x[i] < -1 * xth)
+      x[i] = x[i] + xth;
+    else
+      x[i] = 0;
+  }
   
   // Iterate for each frame and save values in f0 vector
   vector<float>::iterator iX;
@@ -76,6 +98,17 @@ int main(int argc, const char *argv[]) {
   /// \TODO
   /// Postprocess the estimation in order to supress errors. For instance, a median filter
   /// or time-warping may be used.
+  /// \DONE
+  /// Filtro de mediana de tres posiciones implementado
+  
+  for (unsigned int i = 1; i < f0.size()-1; i++){
+    vector<float> aux;
+    aux.push_back(f0[i-1]);
+    aux.push_back(f0[i]);
+    aux.push_back(f0[i+1]);
+    std::sort (aux.begin(), aux.end());
+    f0[i] = aux[1];
+  }
 
   // Write f0 contour into the output file
   ofstream os(output_txt);
