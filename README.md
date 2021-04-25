@@ -7,18 +7,18 @@
    * Complete el cálculo de la autocorrelación e inserte a continuación el código correspondiente.
 
     >``` cpp
-    >void PitchAnalyzer::autocorrelation(const vector<float> &x, vector<float> &r) >const {
+    >void PitchAnalyzer::autocorrelation(const vector<float> &x, vector<float> &r) const {
     >
-    >for (unsigned int l = 0; l < r.size(); ++l) {
-    >  r[l] = 0;
-    >  for (unsigned int j = 0; j < x.size() - l; ++j) {
-    >    r[l] += x[j]*x[j+l];
-    >  }
-    >  r[l] /= x.size();
-    >}
+    >   for (unsigned int l = 0; l < r.size(); ++l) {
+    >     r[l] = 0;
+    >     for (unsigned int j = 0; j < x.size() - l; ++j) {
+    >       r[l] += x[j]*x[j+l];
+    >     }
+    >     r[l] /= x.size();
+    >   }
     >
-    >if (r[0] == 0.0F) //to avoid log() and divide zero 
-    >  r[0] = 1e-10; 
+    >   if (r[0] == 0.0F) //to avoid log() and divide zero 
+    >     r[0] = 1e-10; 
     >}
     >```
 
@@ -77,7 +77,7 @@
     
       >``` cpp
       >bool PitchAnalyzer::unvoiced(float pot, float r1norm, float rmaxnorm) const {
-      >  return (r1norm < 0.9 || rmaxnorm < 0.2 || pot < -38);
+      >  return (r1norm < 0.6 || rmaxnorm < 0.4 || pot < -41);
       >}
       >```
 
@@ -94,16 +94,30 @@
 
     ><img src="./assets/signal-params.png" style="border-radius:10px">
     >
-    >*En la anterior gráfica podemos ver los parametros normalizados de r[1], r[lag],potencia y contorno de pitch en este orden.*
+    >*En la anterior gráfica podemos ver los parametros normalizados de r[1], r[lag], potencia y contorno de pitch generado por wavesurfer en este orden.*
 
       - Use el detector de pitch implementado en el programa `wavesurfer` en una señal de prueba y compare
 	    su resultado con el obtenido por la mejor versión de su propio sistema.  Inserte una gráfica
 		ilustrativa del resultado de ambos detectores.
+
+    >*Para este punto usamos la señal grabada en la P1 para generar pav_2311.f0 y compararla con la detección de pitch que genera Wavesurfer pav_2311.f0ref*
+    >
+    >*Gráfica con las dos detecciones (primero la del programa y después la del Wavesurfer):*
+    ><img src="./assets/pitch.png" style="border-radius:10px">
+    >
+    >*Al comparar las dos detecciones con pitch_evaluate obtenemos la siguiente puntuación:*
+    ><p align="center">
+    ><img src="./assets/wavesurfer-pitchevaluate.png" style="max-width:600px;width:100%">
+    ></p>
   
   * Optimice los parámetros de su sistema de detección de pitch e inserte una tabla con las tasas de error
     y el *score* TOTAL proporcionados por `pitch_evaluate` en la evaluación de la base de datos 
 	`pitch_db/train`..
 
+  >| Unvoiced frames as voiced | Voiced frames as unvoiced | Gross voiced errors (+20.00 %) | MSE of fine errors |  TOTAL  |
+  >|:-------------------------:|:-------------------------:|:------------------------------:|:------------------:|:-------:|
+  >|           3.02 %          |          11.95 %          |             1.22 %             |       2.34 %       | 90.71 % |
+  >
   ><p align="center">
   ><img src="./assets/pitch-summary.png" style="max-width:500px;width:100%">
   ></p>
@@ -112,7 +126,33 @@
      detector de Wavesurfer. Aunque puede usarse Wavesurfer para obtener la representación, se valorará
 	 el uso de alternativas de mayor calidad (particularmente Python).
 
-    ><img src="./assets/pitch.png" style="border-radius:10px">
+  > *Para obtener las gráficas, usamos la librería matplotlib de Python con el siguiente código:*
+  >
+  >```python
+  >import matplotlib.pyplot as plt
+  >import numpy as np
+  >
+  >file = open("pav_2311.f0", 'r')
+  >refFile = open("pav_2311.f0ref", 'r')
+  >
+  >fig, axs = plt.subplots(2, 1)
+  >
+  >axs[0].plot(np.loadtxt(file), 'mo', markersize = 1)
+  >axs[0].set(title='pav_2311.f0')
+  >
+  >axs[1].plot(np.loadtxt(refFile), 'yo', markersize = 1)
+  >axs[1].set(title='pav_2311.f0ref (Wavesurfer)')
+  >
+  >fig.tight_layout()
+  >plt.savefig("./assets/pitch-compare.png")
+  >
+  >file.close()
+  >refFile.close()
+  >```
+  >
+  ><p align="center">
+  ><img src="./assets/pitch-compare.png" style="border-radius:10px">
+  ></p> 
    
 
 ## Ejercicios de ampliación
