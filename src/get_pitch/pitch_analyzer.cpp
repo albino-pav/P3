@@ -10,12 +10,18 @@ using namespace std;
 namespace upc {
   void PitchAnalyzer::autocorrelation(const vector<float> &x, vector<float> &r) const {
 
-    for (unsigned int l = 0; l < r.size(); ++l) {
+    for (unsigned int m = 0; m < r.size(); ++m) {
   		/// \TODO Compute the autocorrelation r[l]
+      /// \DONE Autocorrelation computed
+      r[m] = 0;
+      for(unsigned int n = 0; n < x.size()-m; ++n){
+        r[m]+= x[n]*x[n+m];
+      }
+      r[m] /= x.size();
     }
 
     if (r[0] == 0.0F) //to avoid log() and divide zero 
-      r[0] = 1e-10; 
+      r[0] = 1e-10;
   }
 
   void PitchAnalyzer::set_window(Window win_type) {
@@ -23,10 +29,16 @@ namespace upc {
       return;
 
     window.resize(frameLen);
-
+    const float c0 = 0.5435;
+    const float c1 = 1 - c0;
     switch (win_type) {
     case HAMMING:
       /// \TODO Implement the Hamming window
+      
+      for(unsigned int i = 0; i < frameLen; i++){
+        window[i] = c0 - c1*cos((2*M_PI*i)/(frameLen-1));
+      }
+      /// \DONE
       break;
     case RECT:
     default:
@@ -50,7 +62,28 @@ namespace upc {
     /// \TODO Implement a rule to decide whether the sound is voiced or not.
     /// * You can use the standard features (pot, r1norm, rmaxnorm),
     ///   or compute and use other ones.
-    return true;
+    float score = 0;
+    static float power_first_window = 0;
+    static int window = 0;
+    //const float potvalue = power_first_window + potvalue_th, r1value = r1norm_th, rmaxvalue = rmaxnorm_th;
+    const float potvalue = potvalue_th, r1value = r1norm_th, rmaxvalue = rmaxnorm_th;
+
+    /*if(window == 0){
+      power_first_window = pot;
+      window = 1;
+      return true;
+    }*/
+    if(pot < potvalue)
+      score += 0.5;
+    else if (r1norm < r1value)
+      score += 0.5;
+    else if (rmaxnorm < rmaxvalue)
+      score += 0.5;
+    if (score >= 0.5)
+      return true;
+    else
+      return false;
+    /// \DONE
   }
 
   float PitchAnalyzer::compute_pitch(vector<float> & x) const {
@@ -66,7 +99,8 @@ namespace upc {
     //Compute correlation
     autocorrelation(x, r);
 
-    vector<float>::const_iterator iR = r.begin(), iRMax = iR;
+    //vector<float>::const_iterator iR = r.begin(), 
+    vector<float>::const_iterator iRMax = r.begin() + npitch_min;
 
     /// \TODO 
 	/// Find the lag of the maximum value of the autocorrelation away from the origin.<br>
@@ -75,18 +109,24 @@ namespace upc {
 	///    - The lag corresponding to the maximum value of the pitch.
     ///	   .
 	/// In either case, the lag should not exceed that of the minimum value of the pitch.
-
+    for(vector<float>::const_iterator iR = iRMax; iR < r.end(); iR++){
+      if(*iR > *iRMax){
+        iRMax = iR;
+      }
+    }
     unsigned int lag = iRMax - r.begin();
 
     float pot = 10 * log10(r[0]);
 
+
     //You can print these (and other) features, look at them using wavesurfer
     //Based on that, implement a rule for unvoiced
     //change to #if 1 and compile
-#if 0
+#if 1
     if (r[0] > 0.0F)
       cout << pot << '\t' << r[1]/r[0] << '\t' << r[lag]/r[0] << endl;
 #endif
+  
     
     if (unvoiced(pot, r[1]/r[0], r[lag]/r[0]))
       return 0;
