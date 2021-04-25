@@ -119,7 +119,7 @@
   >|           3.02 %          |          11.95 %          |             1.22 %             |       2.34 %       | 90.71 % |
   >
   ><p align="center">
-  ><img src="./assets/pitch-summary.png" style="max-width:500px;width:100%">
+  ><img src="./assets/pitch-summary.png" style="max-width:400px;width:100%">
   ></p>
 
    * Inserte una gráfica en la que se vea con claridad el resultado de su detector de pitch junto al del
