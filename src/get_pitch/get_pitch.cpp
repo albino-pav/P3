@@ -25,8 +25,11 @@ Usage:
     get_pitch --version
 
 Options:
-    -h, --help  Show this screen
-    --version   Show the version of the project
+    -h, --help      Show this screen
+    --version       Show the version of the project
+    --pwr FLOAT,  --power=FLOAT value of the power threshold [default: -30.9]
+    --rmax FLOAT,   --rmax=FLOAT value of the rmax threshold [default: 0.41]
+    --r1 FLOAT,     --r1=FLOAT value of the r1 threshold [default: 0.95]
 
 Arguments:
     input-wav   Wave file with the audio signal
@@ -47,19 +50,22 @@ int main(int argc, const char *argv[]) {
 	std::string input_wav = args["<input-wav>"].asString();
 	std::string output_txt = args["<output-txt>"].asString();
 
-  // Read input sound file
-  unsigned int rate;
-  vector<float> x;
-  if (readwav_mono(input_wav, rate, x) != 0) {
-    cerr << "Error reading input file " << input_wav << " (" << strerror(errno) << ")\n";
-    return -2;
-  }
+    // Read input sound file
+    unsigned int rate;
+    vector<float> x;
+    if (readwav_mono(input_wav, rate, x) != 0) {
+        cerr << "Error reading input file " << input_wav << " (" << strerror(errno) << ")\n";
+        return -2;
+    }
 
-  int n_len = rate * FRAME_LEN;
-  int n_shift = rate * FRAME_SHIFT;
+    int n_len = rate * FRAME_LEN;
+    int n_shift = rate * FRAME_SHIFT;
+    float power=-std::stof(args["--pwr"].asString());
+    float rmax=std::stof(args["--rmax"].asString());
+    float r1=std::stof(args["--r1"].asString());
 
-  // Define analyzer
-  PitchAnalyzer analyzer(n_len, rate, PitchAnalyzer::HAMMING, 50, 500);
+    // Define analyzer
+    PitchAnalyzer analyzer(n_len, rate, PitchAnalyzer::HAMMING, 50, 500, power, rmax, r1);
 
   /// \TODO
   /// Preprocess the input signal in order to ease pitch estimation. For instance,
@@ -76,6 +82,14 @@ int main(int argc, const char *argv[]) {
   /// \TODO
   /// Postprocess the estimation in order to supress errors. For instance, a median filter
   /// or time-warping may be used.
+
+  // median filter to supress errors
+  for (unsigned int i = 1; i < f0.size(); ++i)
+  {
+    vector<float> aux {f0[i-1],f0[i],f0[i+1]};
+    sort(aux.begin(), aux.end());
+    f0[i] = aux[1];
+  }
 
   // Write f0 contour into the output file
   ofstream os(output_txt);
