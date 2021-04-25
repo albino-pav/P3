@@ -20,7 +20,7 @@ static const char USAGE[] = R"(
 get_pitch - Pitch Detector 
 
 Usage:
-    get_pitch [options] <input-wav> <output-txt>
+    get_pitch [options] <input-wav> <output-txt> <r1_th> <rmax_th> <pot_th>
     get_pitch (-h | --help)
     get_pitch --version
 
@@ -33,6 +33,9 @@ Arguments:
     output-txt  Output file: ASCII file with the result of the detection:
                     - One line per frame with the estimated f0
                     - If considered unvoiced, f0 must be set to f0 = 0
+    r1_th         r[1]/r[0] threshold
+    rmax_th       r[lag]/r[0] threshold
+    pot_th        power threshold
 )";
 
 int main(int argc, const char *argv[]) {
@@ -46,6 +49,9 @@ int main(int argc, const char *argv[]) {
 
 	std::string input_wav = args["<input-wav>"].asString();
 	std::string output_txt = args["<output-txt>"].asString();
+	float r1_th = stof(args["<r1_th>"].asString());
+	float rmax_th = stof(args["<rmax_th>"].asString());
+	float pot_th = stof(args["<pot_th>"].asString());
 
   // Read input sound file
   unsigned int rate;
@@ -59,7 +65,7 @@ int main(int argc, const char *argv[]) {
   int n_shift = rate * FRAME_SHIFT;
 
   // Define analyzer
-  PitchAnalyzer analyzer(n_len, rate, PitchAnalyzer::HAMMING, 50, 500);
+  PitchAnalyzer analyzer(n_len, rate, PitchAnalyzer::RECT, 50, 500, r1_th, rmax_th, pot_th);
 
   /// \TODO
   /// Preprocess the input signal in order to ease pitch estimation. For instance,
