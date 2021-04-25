@@ -61,7 +61,7 @@ namespace upc {
   }
 
   bool PitchAnalyzer::unvoiced(float pot, float r1norm, float rmaxnorm) const {
-    return (r1norm < 0.9 || rmaxnorm < 0.2 || pot < -38);
+    return (r1norm < r1_th || rmaxnorm < rmax_th || pot < -pot_th);
   }
 
   float PitchAnalyzer::compute_pitch(vector<float> & x) const {

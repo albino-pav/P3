@@ -35,23 +35,38 @@ Ejercicios básicos
      unos 30 ms de un fonema sonoro y su periodo de pitch; y, en otro *subplot*, se vea con claridad la
 	 autocorrelación de la señal y la posición del primer máximo secundario.
 
-	 NOTA: es más que probable que tenga que usar Python, Octave/MATLAB u otro programa semejante para
-	 hacerlo. Se valorará la utilización de la librería matplotlib de Python.
+   <img src="./assets/correlation.png" style="border-radius:10px">
+    
+    > *Para obtener las gráficas, usamos la librería matplotlib de Python con el siguiente código:*
+    >
+    > ```python
+    >import matplotlib.pyplot as plt
+    >import numpy as np
+    >import soundfile as sf
+    >
+    >signal, fs = sf.read('pitch_db/train/rl002.wav')
+    >signal = signal[int(1.1*fs):int(1.13*fs)]
+    >
+    >Time = np.linspace(0, len(signal) / fs, num=len(signal))
+    >
+    >fig, axs = plt.subplots(2, 1)
+    >
+    >axs[0].plot(Time, signal)
+    >axs[0].set_ylabel('Vowel A')
+    >axs[0].grid(True)
+    >
+    >axs[1].plot(r)
+    >axs[1].set_ylabel('Autocorrelation')
+    >axs[1].grid(True)
+    >
+    >fig.tight_layout()
+    >plt.show()
+    >```
 
    * Determine el mejor candidato para el periodo de pitch localizando el primer máximo secundario de la
      autocorrelación. Inserte a continuación el código correspondiente.
 
      ``` cpp
-      float PitchAnalyzer::compute_pitch(vector<float> & x) const {
-        if (x.size() != frameLen)
-        return -1.0F;
-
-        //Window input frame
-        for (unsigned int i=0; i<x.size(); ++i)
-          x[i] *= window[i];
-
-        vector<float> r(npitch_max);
-
         //Compute correlation
         autocorrelation(x, r);
  
@@ -66,19 +81,6 @@ Ejercicios básicos
 
         float pot = 10 * log10(r[0]);
 
-        //You can print these (and other) features, look at them using wavesurfer
-        //Based on that, implement a rule for unvoiced
-        //change to #if 1 and compile
-        #if 0
-        if (r[0] > 0.0F)
-          cout << pot << '\t' << r[1]/r[0] << '\t' << r[lag]/r[0] << endl;
-        #endif
-    
-        if (unvoiced(pot, r[1]/r[0], r[lag]/r[0]))
-          return 0;
-        else
-          return (float) samplingFreq/(float) lag;
-      }
       ```
 
    * Implemente la regla de decisión sonoro o sordo e inserte el código correspondiente.
@@ -100,6 +102,10 @@ Ejercicios básicos
 		(r[0]), la autocorrelación normalizada de uno (r1norm = r[1] / r[0]) y el valor de la
 		autocorrelación en su máximo secundario (rmaxnorm = r[lag] / r[0]).
 
+    ><img src="./assets/signal-params.png" style="border-radius:10px">
+    >
+    >En la anterior gráfica podemos ver los parametros normalizados de r[1], r[lag] y potencia
+
 		Puede considerar, también, la conveniencia de usar la tasa de cruces por cero.
 
 	    Recuerde configurar los paneles de datos para que el desplazamiento de ventana sea el adecuado, que
@@ -116,6 +122,8 @@ Ejercicios básicos
    * Inserte una gráfica en la que se vea con claridad el resultado de su detector de pitch junto al del
      detector de Wavesurfer. Aunque puede usarse Wavesurfer para obtener la representación, se valorará
 	 el uso de alternativas de mayor calidad (particularmente Python).
+
+    ><img src="./assets/pitch.png" style="border-radius:10px">
    
 
 Ejercicios de ampliación
