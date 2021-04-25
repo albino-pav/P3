@@ -1,42 +1,31 @@
-PAV - P3: detección de pitch
-============================
+# PAV - P3: detección de pitch
 
-Esta práctica se distribuye a través del repositorio GitHub [Práctica 3](https://github.com/albino-pav/P3).
-Siga las instrucciones de la [Práctica 2](https://github.com/albino-pav/P2) para realizar un `fork` de la
-misma y distribuir copias locales (*clones*) del mismo a los distintos integrantes del grupo de prácticas.
-
-Recuerde realizar el *pull request* al repositorio original una vez completada la práctica.
-
-Ejercicios básicos
-------------------
 
 - Complete el código de los ficheros necesarios para realizar la detección de pitch usando el programa
   `get_pitch`.
 
    * Complete el cálculo de la autocorrelación e inserte a continuación el código correspondiente.
 
-    ``` cpp
-    void PitchAnalyzer::autocorrelation(const vector<float> &x, vector<float> &r) const {
-
-    for (unsigned int l = 0; l < r.size(); ++l) {
-      r[l] = 0;
-      for (unsigned int j = 0; j < x.size() - l; ++j) {
-        r[l] += x[j]*x[j+l];
-      }
-      r[l] /= x.size();
-    }
-
-    if (r[0] == 0.0F) //to avoid log() and divide zero 
-      r[0] = 1e-10; 
-    }
-    ```
+    >``` cpp
+    >void PitchAnalyzer::autocorrelation(const vector<float> &x, vector<float> &r) >const {
+    >
+    >for (unsigned int l = 0; l < r.size(); ++l) {
+    >  r[l] = 0;
+    >  for (unsigned int j = 0; j < x.size() - l; ++j) {
+    >    r[l] += x[j]*x[j+l];
+    >  }
+    >  r[l] /= x.size();
+    >}
+    >
+    >if (r[0] == 0.0F) //to avoid log() and divide zero 
+    >  r[0] = 1e-10; 
+    >}
+    >```
 
    * Inserte una gŕafica donde, en un *subplot*, se vea con claridad la señal temporal de un segmento de
      unos 30 ms de un fonema sonoro y su periodo de pitch; y, en otro *subplot*, se vea con claridad la
 	 autocorrelación de la señal y la posición del primer máximo secundario.
 
-   <img src="./assets/correlation.png" style="border-radius:10px">
-    
     > *Para obtener las gráficas, usamos la librería matplotlib de Python con el siguiente código:*
     >
     > ```python
@@ -62,34 +51,35 @@ Ejercicios básicos
     >fig.tight_layout()
     >plt.show()
     >```
+    >
+    ><img src="./assets/correlation.png" style="border-radius:10px">
 
    * Determine el mejor candidato para el periodo de pitch localizando el primer máximo secundario de la
      autocorrelación. Inserte a continuación el código correspondiente.
 
-     ``` cpp
-        //Compute correlation
-        autocorrelation(x, r);
- 
-        vector<float>::const_iterator iRMax = r.begin() + npitch_min;
-
-        for (vector<float>::const_iterator iR = iRMax; iR < r.end(); iR++) {
-          if(*iR > *iRMax) {
-            iRMax = iR;
-          }
-        }
-        unsigned int lag = iRMax - r.begin();
-
-        float pot = 10 * log10(r[0]);
-
-      ```
+     >``` cpp
+     >   //Compute correlation
+     >   autocorrelation(x, r);
+     >
+     >   vector<float>::const_iterator iRMax = r.begin() + npitch_min;
+     >
+     >   for (vector<float>::const_iterator iR = iRMax; iR < r.end(); iR++) {
+     >     if(*iR > *iRMax) {
+     >       iRMax = iR;
+     >     }
+     >   }
+     >   unsigned int lag = iRMax - r.begin();
+      >
+     >   float pot = 10 * log10(r[0]);
+     > ```
 
    * Implemente la regla de decisión sonoro o sordo e inserte el código correspondiente.
     
-      ``` cpp
-      bool PitchAnalyzer::unvoiced(float pot, float r1norm, float rmaxnorm) const {
-        return (r1norm < 0.9 || rmaxnorm < 0.2 || pot < -38);
-      }
-      ```
+      >``` cpp
+      >bool PitchAnalyzer::unvoiced(float pot, float r1norm, float rmaxnorm) const {
+      >  return (r1norm < 0.9 || rmaxnorm < 0.2 || pot < -38);
+      >}
+      >```
 
 - Una vez completados los puntos anteriores, dispondrá de una primera versión del detector de pitch. El 
   resto del trabajo consiste, básicamente, en obtener las mejores prestaciones posibles con él.
@@ -104,12 +94,7 @@ Ejercicios básicos
 
     ><img src="./assets/signal-params.png" style="border-radius:10px">
     >
-    >En la anterior gráfica podemos ver los parametros normalizados de r[1], r[lag] y potencia
-
-		Puede considerar, también, la conveniencia de usar la tasa de cruces por cero.
-
-	    Recuerde configurar los paneles de datos para que el desplazamiento de ventana sea el adecuado, que
-		en esta práctica es de 15 ms.
+    >*En la anterior gráfica podemos ver los parametros normalizados de r[1], r[lag],potencia y contorno de pitch en este orden.*
 
       - Use el detector de pitch implementado en el programa `wavesurfer` en una señal de prueba y compare
 	    su resultado con el obtenido por la mejor versión de su propio sistema.  Inserte una gráfica
@@ -119,6 +104,10 @@ Ejercicios básicos
     y el *score* TOTAL proporcionados por `pitch_evaluate` en la evaluación de la base de datos 
 	`pitch_db/train`..
 
+  ><p align="center">
+  ><img src="./assets/pitch-summary.png" style="max-width:500px;width:100%">
+  ></p>
+
    * Inserte una gráfica en la que se vea con claridad el resultado de su detector de pitch junto al del
      detector de Wavesurfer. Aunque puede usarse Wavesurfer para obtener la representación, se valorará
 	 el uso de alternativas de mayor calidad (particularmente Python).
@@ -126,18 +115,38 @@ Ejercicios básicos
     ><img src="./assets/pitch.png" style="border-radius:10px">
    
 
-Ejercicios de ampliación
-------------------------
+## Ejercicios de ampliación
 
 - Usando la librería `docopt_cpp`, modifique el fichero `get_pitch.cpp` para incorporar los parámetros del
   detector a los argumentos de la línea de comandos.
-  
-  Esta técnica le resultará especialmente útil para optimizar los parámetros del detector. Recuerde que
-  una parte importante de la evaluación recaerá en el resultado obtenido en la detección de pitch en la
-  base de datos.
 
   * Inserte un *pantallazo* en el que se vea el mensaje de ayuda del programa y un ejemplo de utilización
     con los argumentos añadidos.
+
+  ><p align="center">
+  ><img src="./assets/ampli1.png" style="max-width:500px;width:100%">
+  ></p>
+  >
+  >*Para hacer este ejercicio de ampliación se ha creado otro script con los bucles correspondientes para generar el mejor resultado:*
+  >
+  >```bash
+  >GETF0="get_pitch"
+  >
+  >for pot in $(seq 35 1 45); do
+  >  for rmax in $(seq 0.2 0.1 0.4); do
+  >    for r1 in $(seq 0.6 0.1 0.9); do
+  >      for fwav in pitch_db/train/*.wav; do
+  >        ff0=${fwav/.wav/.f0}
+  >        $GETF0 $fwav $ff0 $r1 $rmax $pot > /dev/null || (echo "Error in  $GETF0 $fwav $ff0"; exit 1)
+  >      done
+  >      echo "r1: $r1 rmax: $rmax pot: $pot" >> res.txt
+  >      pitch_evaluate pitch_db/train/*.f0ref | fgrep TOTAL >> res.txt
+  >    done
+  >  done
+  >done
+  >
+  >exit 0
+  >```
 
 - Implemente las técnicas que considere oportunas para optimizar las prestaciones del sistema de detección
   de pitch.
