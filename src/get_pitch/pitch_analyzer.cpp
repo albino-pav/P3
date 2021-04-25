@@ -12,6 +12,12 @@ namespace upc {
 
     for (unsigned int l = 0; l < r.size(); ++l) {
   		/// \TODO Compute the autocorrelation r[l]
+      r[l] = 0; 
+      for (unsigned int j=0; j < x.size()-l; ++j) {
+        r[l] += x[j]*x[j+l];
+      }
+      r[l] /= x.size(); 
+      /// \DONE Autocorrelation computada
     }
 
     if (r[0] == 0.0F) //to avoid log() and divide zero 
@@ -24,10 +30,21 @@ namespace upc {
 
     window.resize(frameLen);
 
+    //Les constants de Hamming estan aquí dalt perquè no em deixa posar-les a baix
+    const float a0 = 0.53836; 
+    const float a1 = 0.46163; 
+
     switch (win_type) {
     case HAMMING:
       /// \TODO Implement the Hamming window
+
+      for (unsigned int i=0; i<frameLen; i++){
+        window[i] = a0 - a1*cos((2*M_PI*i)/(frameLen-1)); 
+      }
+
+      /// \DONE Finestra de Hamming implementada
       break;
+
     case RECT:
     default:
       window.assign(frameLen, 1);
@@ -50,7 +67,17 @@ namespace upc {
     /// \TODO Implement a rule to decide whether the sound is voiced or not.
     /// * You can use the standard features (pot, r1norm, rmaxnorm),
     ///   or compute and use other ones.
-    return true;
+
+  if (pot < -49.5 || r1norm < 0.78 || rmaxnorm < 0.37) {
+    return true; 
+  } else {
+    return false; 
+  }
+
+    /// \DONE 
+    /// Hem diferenciat en sons sonors (false) i sords (true) segons uns paràmetres que hem anat variant per trobar els que més s'acostaven <br>
+    /// Hem utilitzat els valors estàndar que se'ns donaven, la potència, la rmax normalitzada i la r1 normalitzada també (és a dir els valors 
+    /// de r1 i rmax sempre ens sortiran positius per això posem només menor que)
   }
 
   float PitchAnalyzer::compute_pitch(vector<float> & x) const {
@@ -66,20 +93,56 @@ namespace upc {
     //Compute correlation
     autocorrelation(x, r);
 
-    vector<float>::const_iterator iR = r.begin(), iRMax = iR;
+  vector<float>::const_iterator iR = r.begin();
+  //vector<float>::const_iterator  iRMax = r.begin() + npitch_min;
+  vector<float>::const_iterator iRMax = iR;
+  //Constant per el valor d'abans i després de l'iterador
+  vector<float>::const_iterator iRAbans = r.begin(); 
+  vector<float>::const_iterator iRDespres = r.begin() +1; 
 
     /// \TODO 
 	/// Find the lag of the maximum value of the autocorrelation away from the origin.<br>
 	/// Choices to set the minimum value of the lag are:
 	///    - The first negative value of the autocorrelation.
 	///    - The lag corresponding to the maximum value of the pitch.
-    ///	   .
+  ///	   .
 	/// In either case, the lag should not exceed that of the minimum value of the pitch.
+
+  while(*iR > *iRDespres || iR < r.begin()+npitch_min || *iR > 0.0F){
+    ++iR; 
+    ++iRDespres; 
+  }
+
+  iRMax = iR; 
+
+  for(vector<float>::const_iterator iR = iRMax; iR < r.end(); ++iR){
+    if(*iR>*iRMax){
+      iRAbans = iR-1; 
+      iRDespres = iR+1; 
+      if (*iR > *iRAbans && *iR > *iRDespres){
+        iRMax = iR; 
+      }
+    }
+  }
+
+    for(vector<float>::const_iterator iR = iRMax ;iR<r.end(); ++iR){
+      if(*iR>*iRMax){
+        iRMax=iR;
+      }
+    }
 
     unsigned int lag = iRMax - r.begin();
 
     float pot = 10 * log10(r[0]);
 
+    /// \DONE 
+    /// Per saber el valor mínim del segon pic de l'autocorrelació (pitch) <br>
+    /// Condició 1 iR > iRdespres ens indica que encara no hem arribat a baix de tot del primer pic <br>
+    /// Condició 2 iR > r.begin()+npitch_min ens assegura que superem el valor mínim de pitch que hem considerat <br>
+    /// Condició 3 iR > 0.0F ens assegura que ens passem del primer pic (en el cas de que tinguem un primer pitch molt ample) <br>
+    /// A continuació comprovem que el valor que tenim de iRmax es troba en un pic. <br>
+    /// Finalment deixem el lag tal i com l'haviem calculat a classe <br>
+    
     //You can print these (and other) features, look at them using wavesurfer
     //Based on that, implement a rule for unvoiced
     //change to #if 1 and compile

@@ -1,3 +1,7 @@
 /build
 /pitch_db
 /__MAC*
+Makefile 
+./DS_Store
+.vscode
+.DS_Store

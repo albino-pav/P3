@@ -16,7 +16,7 @@ namespace upc {
   ///
   class PitchAnalyzer {
   public:
-	/// Wndow type
+	/// Window type
     enum Window {
 		RECT, 						///< Rectangular window
 		HAMMING						///< Hamming window
