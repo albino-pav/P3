@@ -12,6 +12,11 @@ namespace upc {
 
     for (unsigned int l = 0; l < r.size(); ++l) {
   		/// \TODO Compute the autocorrelation r[l]
+      /// \DONE Autocorrelació calculada 
+      r[l]=0.0F;
+      for (unsigned int n = 0; n < x.size()-l; ++n){
+        r[l] += x[n]*x[n+l];
+      }
     }
 
     if (r[0] == 0.0F) //to avoid log() and divide zero 
@@ -49,7 +54,10 @@ namespace upc {
   bool PitchAnalyzer::unvoiced(float pot, float r1norm, float rmaxnorm) const {
     /// \TODO Implement a rule to decide whether the sound is voiced or not.
     /// * You can use the standard features (pot, r1norm, rmaxnorm),
-    ///   or compute and use other ones.
+    ///   or compute and use others.
+    if(rmaxnorm >this->rmaxnorm_threshold){
+      return false;
+    }
     return true;
   }
 
@@ -75,7 +83,7 @@ namespace upc {
 	///    - The lag corresponding to the maximum value of the pitch.
     ///	   .
 	/// In either case, the lag should not exceed that of the minimum value of the pitch.
-
+    iRMax = max_element(iR+npitch_min, iR+npitch_max); //find the maximum value of the autocorrelation away from the origin
     unsigned int lag = iRMax - r.begin();
 
     float pot = 10 * log10(r[0]);
@@ -83,6 +91,7 @@ namespace upc {
     //You can print these (and other) features, look at them using wavesurfer
     //Based on that, implement a rule for unvoiced
     //change to #if 1 and compile
+
 #if 0
     if (r[0] > 0.0F)
       cout << pot << '\t' << r[1]/r[0] << '\t' << r[lag]/r[0] << endl;

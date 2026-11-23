@@ -5,7 +5,7 @@
 set -o pipefail
 
 # Put here the program (maybe with path)
-GETF0="get_pitch"
+GETF0="get_pitch --rmaxnorm 0.6"
 
 for fwav in pitch_db/train/*.wav; do
     ff0=${fwav/.wav/.f0}
